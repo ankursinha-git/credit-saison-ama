@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Credit Saison AMA - Interactive Prototype</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #root { height: 100%; width: 100%; overflow: hidden; background: #E2E8F0; display: flex; align-items: center; justify-content: center; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+
+// ─── QUESTION BANK (110 questions) ───
+const QB = {
+  "Credit Score Basics": { icon: "📊", color: "#2E7D32", questions: [
+    { q: "What is a credit score and why does it matter?", intent: "education" },{ q: "How is my CIBIL score calculated?", intent: "education" },{ q: "What is considered a good credit score in India?", intent: "education" },{ q: "Where can I check my credit score for free?", intent: "action" },{ q: "How often does my credit score get updated?", intent: "education" },{ q: "What is the difference between CIBIL, Experian, and Equifax?", intent: "education" },{ q: "Can I have different scores across different bureaus?", intent: "education" },{ q: "What does 'no credit history' mean?", intent: "education" },{ q: "Does checking my own score lower it?", intent: "education" },{ q: "What information appears on my credit report?", intent: "education" },{ q: "How do I dispute an error on my credit report?", intent: "action" },{ q: "How far back does my credit history go?", intent: "education" },{ q: "Can errors on my report affect loan approval?", intent: "education" },{ q: "What is a credit report vs a credit score?", intent: "education" },
+  ]},
+  "Improve Your Score": { icon: "📈", color: "#1565C0", questions: [
+    { q: "How can I improve my credit score quickly?", intent: "action" },{ q: "Does paying my credit card on time improve my score?", intent: "education" },{ q: "How does credit utilization affect my score?", intent: "education" },{ q: "Should I close old credit cards I don't use?", intent: "education" },{ q: "Does having multiple loans hurt my score?", intent: "education" },{ q: "How long does it take to rebuild a poor score?", intent: "education" },{ q: "Can I improve my score without ever taking a loan?", intent: "action" },{ q: "Does paying only the minimum due hurt my score?", intent: "education" },{ q: "How does loan settlement affect my score?", intent: "education" },{ q: "What is the ideal credit utilization ratio?", intent: "education" },{ q: "Does being a loan guarantor affect my score?", intent: "education" },{ q: "How does a missed EMI impact my score?", intent: "education" },{ q: "Can I remove a negative remark from my report?", intent: "action" },{ q: "Will adding an authorized user help their score?", intent: "education" },
+  ]},
+  "Business Loans": { icon: "🏢", color: "#E65100", questions: [
+    { q: "What types of business loans does Credit Saison offer?", intent: "conversion" },{ q: "What is the maximum business loan amount I can get?", intent: "conversion" },{ q: "Do I need collateral for a business loan?", intent: "conversion" },{ q: "What CIBIL score do I need for a business loan?", intent: "conversion" },{ q: "How long does business loan approval take?", intent: "conversion" },{ q: "What documents do I need for a business loan?", intent: "conversion" },{ q: "Can a startup apply for a business loan?", intent: "conversion" },{ q: "What is the interest rate on business loans?", intent: "conversion" },{ q: "What tenure options are available for business loans?", intent: "conversion" },{ q: "Can I prepay my business loan early?", intent: "action" },{ q: "What happens if I miss an EMI?", intent: "education" },{ q: "What are the eligibility criteria?", intent: "conversion" },{ q: "Can I apply if my business is less than 2 years old?", intent: "conversion" },{ q: "What are the penal charges for delayed payment?", intent: "education" },{ q: "How is the loan amount decided for my business?", intent: "education" },
+  ]},
+  "Loan Against Property": { icon: "🏠", color: "#6A1B9A", questions: [
+    { q: "What is a loan against property (LAP)?", intent: "education" },{ q: "How is LAP different from a home loan?", intent: "education" },{ q: "What is the maximum LAP amount I can get?", intent: "conversion" },{ q: "What types of properties are eligible for LAP?", intent: "conversion" },{ q: "Can I get LAP on a rented-out property?", intent: "conversion" },{ q: "What is the interest rate for LAP?", intent: "conversion" },{ q: "What is the maximum tenure for LAP?", intent: "conversion" },{ q: "Can I prepay my LAP without penalty?", intent: "action" },{ q: "What documents are needed for LAP?", intent: "conversion" },{ q: "How long does LAP approval take?", intent: "conversion" },{ q: "Can I use LAP funds for any purpose?", intent: "education" },{ q: "What happens if I default on my LAP?", intent: "education" },{ q: "Is property valuation needed for LAP?", intent: "education" },{ q: "Can I get LAP on commercial property?", intent: "conversion" },{ q: "What is the LTV ratio for LAP?", intent: "education" },
+  ]},
+  "EMI & Interest Rates": { icon: "💰", color: "#00695C", questions: [
+    { q: "How is my EMI calculated?", intent: "education" },{ q: "What is flat rate vs reducing balance rate?", intent: "education" },{ q: "Can I change my EMI amount mid-tenure?", intent: "action" },{ q: "What is a loan amortization schedule?", intent: "education" },{ q: "How does prepayment reduce my total interest?", intent: "education" },{ q: "Is there a foreclosure charge on my loan?", intent: "education" },{ q: "Fixed vs floating interest rate — which is better?", intent: "education" },{ q: "How do I use Credit Saison's EMI calculator?", intent: "conversion" },{ q: "Can a high credit score get me a lower interest rate?", intent: "education" },{ q: "What happens to EMI after partial prepayment?", intent: "education" },{ q: "Are there hidden charges in my loan?", intent: "education" },{ q: "What is GST on loan processing fees?", intent: "education" },{ q: "How does the RBI repo rate affect my loan?", intent: "education" },
+  ]},
+  "Repayment & Account": { icon: "🔄", color: "#37474F", questions: [
+    { q: "How can I make my EMI payment?", intent: "action" },{ q: "Can I set up auto-debit for my EMI?", intent: "action" },{ q: "What happens if my auto-debit fails?", intent: "education" },{ q: "How do I get my loan statement?", intent: "action" },{ q: "Can I change my EMI due date?", intent: "action" },{ q: "How do I get a NOC after loan closure?", intent: "action" },{ q: "What is the process for loan foreclosure?", intent: "education" },{ q: "Can I transfer my loan to another lender?", intent: "education" },{ q: "How do I update my contact details?", intent: "action" },{ q: "What if I can't pay my EMI this month?", intent: "education" },{ q: "Is there a grace period for EMI payments?", intent: "education" },{ q: "How do I download my repayment schedule?", intent: "action" },
+  ]},
+  "Myths & Mistakes": { icon: "⚡", color: "#C62828", questions: [
+    { q: "Does taking a loan always hurt your credit score?", intent: "education" },{ q: "Do I need a high salary to get a loan?", intent: "education" },{ q: "Is zero debt better for my credit score?", intent: "education" },{ q: "Will one missed payment ruin my score forever?", intent: "education" },{ q: "Is paying minimum due on credit card enough?", intent: "education" },{ q: "Do NBFCs charge more than banks?", intent: "education" },{ q: "Can I get a loan if I am self-employed?", intent: "conversion" },{ q: "Is applying for multiple loans at once bad?", intent: "education" },{ q: "Does settling a loan for less help my score?", intent: "education" },{ q: "Is a co-applicant always needed for a loan?", intent: "education" },{ q: "Can I get a loan with a low CIBIL score?", intent: "conversion" },
+  ]},
+  "About Credit Saison": { icon: "🏦", color: "#0A1F44", questions: [
+    { q: "What makes Credit Saison different from other NBFCs?", intent: "conversion" },{ q: "How do I apply for a loan on the app?", intent: "conversion" },{ q: "Does Credit Saison offer doorstep service?", intent: "conversion" },{ q: "What is Credit Saison's grievance redressal process?", intent: "action" },{ q: "How do I contact Credit Saison support?", intent: "action" },{ q: "Is Credit Saison regulated by RBI?", intent: "education" },{ q: "What is the Vyapari loan?", intent: "conversion" },{ q: "Does Credit Saison offer doctor loans?", intent: "conversion" },{ q: "Can I track my loan application status?", intent: "action" },{ q: "What is the turnaround time for approval?", intent: "conversion" },
+  ]}
+};
+
+// ═══ FIX #1: ROBUST INTENT DETECTION with fuzzy matching ═══
+const INTENT_PATTERNS = {
+  agent_credit_score: [
+    /\b(check|see|show|get|fetch|pull|know|find|view|whats|what'?s)\b.*(credit|cibil|experian|score|report)/i,
+    /\b(credit|cibil|experian)\b.*(score|report|check|rating|number)/i,
+    /\bmy\s*score\b/i, /\bcredit\s*report\b/i, /\bscore\s*check\b/i,
+    /\bhow\s*(much|good|bad)\s*(is)?\s*my\s*(credit|cibil|score)/i,
+    /\bcibil\b/i, // standalone "cibil" = always credit score agent
+  ],
+  agent_pfm: [
+    /\b(spend|saving|expense|income|money|financial)\s*(insight|pattern|habit|health|analy|track|manage|breakdown)/i,
+    /\b(bank|account)\s*(aggregat|link|connect|data|statement|insight)/i,
+    /\b(analy[sz]e|understand|track)\s*(my)?\s*(spend|money|financ|expense|income|saving)/i,
+    /\bpfm\b/i, /\bfinsight/i, /\baa\s*consent/i,
+    /\b(where|how)\s*(does|is|do)\s*(my)?\s*money\s*(go|going|spent)/i,
+    /\bbudget/i, /\bspending\s*(pattern|habit|breakdown)/i,
+  ],
+  agent_bbps: [
+    /\b(pay|recharge|top.?up)\s*(my|the|a)?\s*(bill|electric|mobile|dth|broadband|phone|wifi|gas|water)/i,
+    /\bbill\s*(pay|payment)/i, /\bbbps\b/i, /\brecharge\b/i,
+    /\b(electric|electricity|power|bijli)\s*(bill)?/i,
+    /\b(mobile|phone|prepaid|postpaid)\s*(recharge|bill|top.?up)/i,
+    /\b(dth|dish|tata\s*play|airtel\s*digital)/i,
+    /\b(broadband|wifi|internet)\s*(bill|pay|recharge)/i,
+  ]
+};
+
+function detectIntent(text) {
+  const t = text.trim();
+  // Check each agent pattern set, return first match
+  for (const [intent, patterns] of Object.entries(INTENT_PATTERNS)) {
+    for (const regex of patterns) {
+      if (regex.test(t)) return intent;
+    }
+  }
+  return "ama";
+}
+
+// ═══ FIX #2 + #3: BETTER ANSWERS + CONTEXT-AWARE RESPONSES ═══
+// Context-aware response generator (uses session memory)
+function getResponse(text, memory) {
+  const lower = text.toLowerCase();
+
+  // ═══ PFM DATA QUERY LAYER — answer spending/income questions from bank data ═══
+  if (memory.pfmData) {
+    const p = memory.pfmData;
+    const catMap = {};
+    p.categories.forEach(c => { catMap[c.name.toLowerCase()] = c; });
+
+    // Category-specific spending queries
+    const spendingPatterns = [
+      { match: /emi|loan|installment/, cat: "emis & loans" },
+      { match: /rent|utilit|electric|water|gas|maintenance/, cat: "rent & utilities" },
+      { match: /food|din(ing|e|ner)|restaurant|eat|zomato|swiggy|meal|lunch|breakfast/, cat: "food & dining" },
+      { match: /shop|cloth|amazon|flipkart|buy|purchase|retail/, cat: "shopping" },
+      { match: /other|misc|remain/, cat: "others" },
+    ];
+
+    // Check if this is a spending query
+    const isSpendingQ = lower.match(/spend|spent|spending|expense|expens|cost|how\s*much|monthly|pay(ing|ment)?|budget|where.*money|money.*go/);
+    const isIncomeQ = lower.match(/income|earn|salary|credit|inflow|receiv/);
+    const isSavingsQ = lower.match(/sav(e|ing|ed)|left\s*over|surplus|remaining|balance/);
+    const isSummaryQ = lower.match(/summary|overview|total|overall|breakd?own|full\s*picture|financial\s*(health|status|position)/);
+
+    if (isSpendingQ || isIncomeQ || isSavingsQ || isSummaryQ) {
+      // Find which category they're asking about
+      let matchedCat = null;
+      for (const { match, cat } of spendingPatterns) {
+        if (match.test(lower)) { matchedCat = catMap[cat]; break; }
+      }
+
+      if (matchedCat && isSpendingQ) {
+        const monthlyAmt = matchedCat.amount;
+        const pctOfIncome = Math.round((monthlyAmt / p.income) * 100);
+        const pctOfSpend = matchedCat.pct;
+        const isHigh = pctOfSpend > 25;
+        return {
+          text: `Based on your bank data (${p.period}):\n\n💰 ${matchedCat.name}: ₹${(monthlyAmt/1000).toFixed(0)}K/month\n\nThis is ${pctOfSpend}% of your total spending and ${pctOfIncome}% of your monthly income (₹${(p.income/1000).toFixed(0)}K).\n\n${isHigh ? `This is a significant portion of your budget. ${matchedCat.name === "EMIs & Loans" ? "If you're considering a new loan, factor this in — your current EMI burden is already at " + pctOfIncome + "% of income." : "You might want to review this category for potential savings."}` : `This looks reasonable relative to your income. ${matchedCat.name === "Food & Dining" ? "The average Indian urban household spends about 15-20% on food, so you're right in that range." : ""}`}`,
+          followUp: ["What is my total monthly spending?", "How much am I saving?", "Can I afford another EMI?"],
+          cta: { text: "Open Finsights", action: "open_finsights" }
+        };
+      }
+
+      if (isIncomeQ) {
+        return {
+          text: `From your bank data (${p.period}):\n\n📈 Monthly Income: ₹${(p.income/1000).toFixed(0)}K\n📉 Monthly Spending: ₹${(p.spending/1000).toFixed(0)}K\n💪 Net Savings: ₹${(p.savings/1000).toFixed(0)}K (${p.savingsRate}% savings rate)\n\nYour income-to-expense ratio is healthy. ${p.savingsRate > 20 ? "You're saving more than the national average of 18%." : "The national average savings rate is 18%, so there's room to optimize."}`,
+          followUp: ["What am I spending most on?", "Can I afford a new EMI?", "How can I save more?"],
+          cta: { text: "Open Finsights", action: "open_finsights" }
+        };
+      }
+
+      if (isSavingsQ) {
+        return {
+          text: `From your bank data (${p.period}):\n\n💰 You're saving ₹${(p.savings/1000).toFixed(0)}K per month (${p.savingsRate}% of income).\n\nBreakdown of where your ₹${(p.spending/1000).toFixed(0)}K monthly spending goes:\n${p.categories.map(c => `• ${c.name}: ₹${(c.amount/1000).toFixed(0)}K (${c.pct}%)`).join("\n")}\n\n${p.savingsRate >= 25 ? "Your savings rate is excellent. You have a strong financial cushion." : p.savingsRate >= 18 ? "Your savings rate is above average. Consider automating investments to build wealth faster." : "Your savings rate is below the 18% national average. Look at your top 2 spending categories for optimization opportunities."}`,
+          followUp: ["How much do I spend on food?", "What is my EMI burden?", "Can I afford another loan?"],
+          cta: { text: "Open Finsights", action: "open_finsights" }
+        };
+      }
+
+      if (isSummaryQ || (isSpendingQ && !matchedCat)) {
+        return {
+          text: `Here's your financial summary (${p.period}):\n\n📊 Income: ₹${(p.income/1000).toFixed(0)}K/month\n📊 Spending: ₹${(p.spending/1000).toFixed(0)}K/month\n📊 Savings: ₹${(p.savings/1000).toFixed(0)}K/month (${p.savingsRate}%)\n\nSpending breakdown:\n${p.categories.map(c => `• ${c.name}: ₹${(c.amount/1000).toFixed(0)}K (${c.pct}%)`).join("\n")}\n\nYour biggest expense is ${p.categories[0].name} at ₹${(p.categories[0].amount/1000).toFixed(0)}K/month. ${p.categories[0].pct > 30 ? "This is a significant portion — worth reviewing if you're looking to optimize." : "This is within a reasonable range."}`,
+          followUp: ["How much did I spend on food?", "What is my EMI burden?", "Can I afford another EMI?"],
+          cta: { text: "Open Finsights", action: "open_finsights" }
+        };
+      }
+    }
+
+    // "Can I afford" / "additional EMI" queries
+    if (lower.match(/afford|can\s*i\s*take|additional\s*emi|more\s*emi|new\s*(loan|emi)|capacity|headroom/)) {
+      const emiCat = catMap["emis & loans"];
+      const currentEmi = emiCat ? emiCat.amount : 0;
+      const maxEmi = Math.round(p.income * 0.4);
+      const headroom = maxEmi - currentEmi;
+      const canAfford = headroom > 5000;
+      return {
+        text: `Based on your financial data:\n\n📊 Current EMIs: ₹${(currentEmi/1000).toFixed(0)}K/month (${Math.round(currentEmi/p.income*100)}% of income)\n📊 Safe limit (40% rule): ₹${(maxEmi/1000).toFixed(0)}K/month\n📊 Available headroom: ₹${(headroom/1000).toFixed(0)}K/month\n\n${canAfford ? `Yes, you can comfortably take on an additional EMI of up to ₹${(headroom/1000).toFixed(0)}K/month.\n\nAt 16% interest over 36 months, that translates to roughly ₹${Math.round(headroom*28/1000)}K loan amount.\nAt 10% (LAP rate) over 10 years, that's roughly ₹${Math.round(headroom*78/1000)}K.` : "Your current EMI burden is close to the safe limit. I'd recommend reducing existing obligations before taking a new loan, or consider a longer tenure to keep EMIs low."}`,
+        followUp: ["What types of business loans does Credit Saison offer?", "What is the interest rate for LAP?"],
+        cta: canAfford ? { text: "Explore Loan Options", action: "apply" } : null
+      };
+    }
+
+    // "How can I save more" query
+    if (lower.match(/save\s*more|reduce\s*spend|cut\s*(cost|expens|spend)|optimi[sz]e/)) {
+      const sorted = [...p.categories].sort((a, b) => b.amount - a.amount);
+      return {
+        text: `Here are actionable ways to save more based on your spending data:\n\n1. ${sorted[0].name} (₹${(sorted[0].amount/1000).toFixed(0)}K) — Your biggest expense. ${sorted[0].name === "EMIs & Loans" ? "Consider refinancing at lower rates or making prepayments to reduce interest." : sorted[0].name === "Rent & Utilities" ? "Utility bills can be optimized with energy-saving measures. Rent is harder to change short-term." : "Look for 10-15% reduction opportunities here for maximum impact."}\n\n2. ${sorted[1].name} (₹${(sorted[1].amount/1000).toFixed(0)}K) — ${sorted[1].name === "Food & Dining" ? "Cooking more at home and reducing food delivery could save ₹5-8K/month." : "Review for subscriptions or recurring charges you might not need."}\n\n3. ${sorted[2].name} (₹${(sorted[2].amount/1000).toFixed(0)}K) — ${sorted[2].name === "Shopping" ? "Try a 24-hour rule before non-essential purchases." : "Small optimizations here add up."}\n\nA realistic target: Save an additional ₹8-12K/month by optimizing your top 2 categories. That's ₹1-1.4L/year.`,
+        followUp: ["What is my total monthly spending?", "Can I afford a new EMI?"],
+        cta: { text: "Open Finsights", action: "open_finsights" }
+      };
+    }
+  }
+
+  // If no PFM data but user is asking about spending
+  if (!memory.pfmData && lower.match(/spend|spent|income|saving|my\s*money|my\s*expense|my\s*emi\s*burden|afford/)) {
+    return {
+      text: "I'd need your bank data to answer that accurately. I can connect to your bank account securely via Account Aggregator to analyze your spending, income, and savings.\n\nIt takes about 2 minutes and your data is fully encrypted.",
+      followUp: [],
+      cta: { text: "Link Bank Account", action: "trigger_pfm_agent" }
+    };
+  }
+  // Exact match first
+  if (AI_RESPONSES[text]) {
+    const r = { ...AI_RESPONSES[text] };
+    // FIX #4: If user has score in memory, personalize credit-related answers
+    if (memory.creditScore && text.toLowerCase().includes("improve")) {
+      const s = memory.creditScore;
+      r.text = `Based on your current Experian score of ${s.score} (${s.rating}), here's a personalized improvement plan:\n\n`;
+      if (s.score < 700) {
+        r.text += "Your score needs significant work. Priority actions:\n\n1. Clear any overdue payments immediately — this is pulling your score down the most\n2. Reduce credit card utilization below 30% within the next 30 days\n3. Avoid any new loan applications for at least 6 months\n4. Set up auto-pay for all existing EMIs\n\nTimeline: Expect 40-60 point improvement in 3-4 months with consistent behavior.";
+      } else if (s.score < 750) {
+        r.text += "You're in the Good range but close to Excellent. Focus areas:\n\n1. Your recent hard inquiry (1 month ago) will age out in 6 months — avoid new applications\n2. Reduce active accounts from 7 to 4-5 by closing unused ones (keep the oldest)\n3. Maintain on-time payments (you're at 98%, push for 100%)\n4. Keep utilization at current 22% or lower\n\nTimeline: You could cross 800 in 4-6 months.";
+      } else {
+        r.text += "Your score of " + s.score + " is already excellent. To maintain it:\n\n1. Continue 100% on-time payments\n2. Keep credit utilization below 25%\n3. Don't close your oldest credit account\n4. Limit hard inquiries to 1-2 per year\n\nYou're in great shape for the best loan rates available.";
+      }
+      r.followUp = ["What CIBIL score do I need for a business loan?", "What types of business loans does Credit Saison offer?"];
+    }
+    // Personalize eligibility answers with score
+    if (memory.creditScore && (text.toLowerCase().includes("eligib") || text.toLowerCase().includes("cibil score do i need"))) {
+      const s = memory.creditScore.score;
+      r.text += `\n\n📊 Based on your current score of ${s}: ${s >= 750 ? "You meet the ideal criteria. You're likely to get faster approval and better rates." : s >= 650 ? "You meet the minimum criteria. You may qualify, though a higher score would get you better terms." : "Your score is below the typical minimum. Consider improving it first, or we can assess your full profile including business financials."}`;
+    }
+    // Personalize with PFM data
+    if (memory.pfmData && text.toLowerCase().includes("loan")) {
+      const p = memory.pfmData;
+      const emiBurden = Math.round((p.categories[0].amount / p.income) * 100);
+      r.text += `\n\n💡 From your financial profile: Your current EMI burden is ${emiBurden}% of income. ${emiBurden < 30 ? "You have healthy headroom for additional EMIs." : emiBurden < 40 ? "You're within acceptable range but approaching the upper limit." : "This is on the higher side. Consider clearing existing obligations first."}`;
+    }
+    return r;
+  }
+
+  // ═══ FIX #2: FUZZY MATCHING — find closest question ═══
+  const lower = text.toLowerCase();
+  const keywords = lower.split(/\s+/).filter(w => w.length > 2);
+  let bestMatch = null, bestScore = 0;
+  
+  Object.values(QB).forEach(cat => {
+    cat.questions.forEach(({ q }) => {
+      const ql = q.toLowerCase();
+      let score = 0;
+      keywords.forEach(kw => { if (ql.includes(kw)) score += 1; });
+      // Bonus for key financial terms
+      if (lower.includes("emi") && ql.includes("emi")) score += 2;
+      if (lower.includes("interest") && ql.includes("interest")) score += 2;
+      if (lower.includes("loan") && ql.includes("loan")) score += 1;
+      if (lower.includes("prepay") && ql.includes("prepay")) score += 2;
+      if (lower.includes("document") && ql.includes("document")) score += 2;
+      if (score > bestScore) { bestScore = score; bestMatch = q; }
+    });
+  });
+
+  if (bestScore >= 2 && AI_RESPONSES[bestMatch]) {
+    return AI_RESPONSES[bestMatch];
+  }
+
+  // ═══ FIX #2: SMART FALLBACK instead of "talk to advisor" ═══
+  // Categorize the unknown question and give a useful response
+  if (lower.match(/eligib|qualify|can\s*i\s*get|am\s*i\s*eligible/)) {
+    return {
+      text: "Eligibility depends on a few key factors:\n\n• Credit Score: 650+ for business loans, varies for LAP\n• Business Vintage: Typically 2+ years (some exceptions for strong profiles)\n• Annual Turnover: Varies by loan amount\n• KYC Documents: PAN, Aadhaar, business proof\n\nThe fastest way to check is to run a quick eligibility check right here in the app. It takes under 2 minutes and won't affect your credit score.",
+      followUp: ["What types of business loans does Credit Saison offer?", "What CIBIL score do I need for a business loan?"],
+      cta: { text: "Check Eligibility", action: "check_eligibility" }
+    };
+  }
+  if (lower.match(/document|paper|proof|kyc/)) {
+    return {
+      text: "Here are the documents typically needed:\n\nFor Business Loans:\n• PAN card + Aadhaar\n• Last 6 months bank statements\n• Business registration proof (GST, Shop Act, etc.)\n• Last 2 years ITR\n• Address proof\n\nFor LAP (additional):\n• Property documents (title deed, chain of documents)\n• Property tax receipts\n• Approved building plan\n\nYou can upload these directly through the app during the application process.",
+      followUp: ["How long does business loan approval take?", "What types of properties are eligible for LAP?"],
+      cta: null
+    };
+  }
+  if (lower.match(/time|how\s*long|duration|days|fast|quick/)) {
+    return {
+      text: "Here are typical timelines at Credit Saison:\n\n• Business Loan approval: 24-48 hours after document submission\n• Business Loan disbursement: 1-3 business days post-approval\n• LAP approval: 7-10 business days (includes property valuation)\n• LAP disbursement: 3-5 business days post-approval\n\nFaster processing is possible with complete documentation and a strong credit profile (750+ score).",
+      followUp: ["What documents do I need for a business loan?", "Can I track my loan application status?"],
+      cta: null
+    };
+  }
+  // Vague query handler — ask clarifying question instead of dead end
+  return {
+    text: `I want to make sure I give you the right answer. Could you tell me a bit more about what you're looking for?\n\nHere are some things I can help with:`,
+    followUp: ["What types of business loans does Credit Saison offer?", "How can I improve my credit score quickly?", "What is the interest rate for LAP?"],
+    cta: null,
+    clarifying: true
+  };
+}
+
+const AI_RESPONSES = {
+  "What is a credit score and why does it matter?": { text: "A credit score is a 3-digit number (300-900) that represents your creditworthiness. Lenders use it to decide loan approval, interest rates, and limits.\n\nKey facts:\n• 750+ is considered excellent in India\n• 650-749 is good but may get higher rates\n• Below 650 makes approval difficult\n\nIt's calculated from 5 factors: payment history (35%), credit utilization (30%), credit age (15%), credit mix (10%), and new inquiries (10%).\n\nWant to see your actual score? I can pull it from Experian instantly.", followUp: ["How is my CIBIL score calculated?","Where can I check my credit score for free?"], cta: { text: "Check My Score", action: "trigger_cs_agent" } },
+  "What types of business loans does Credit Saison offer?": { text: "Credit Saison offers collateral-free business loans for MSMEs:\n\n• Amount: ₹1 Lakh to ₹75 Lakhs\n• Interest: Starting at 16% p.a. (reducing balance)\n• Tenure: 12 to 60 months, you choose\n• Collateral: None required\n• Approval: As fast as 48 hours\n• Disbursement: 1-3 days post-approval\n\nEligibility: 2+ years business vintage, 650+ CIBIL score, minimum ₹10L annual turnover.\n\nWe also offer specialized Vyapari Loans for traders and Doctor Loans for medical professionals.", followUp: ["What documents do I need for a business loan?","What CIBIL score do I need for a business loan?"], cta: { text: "Check Eligibility", action: "apply_business_loan" } },
+  "What is a loan against property (LAP)?": { text: "LAP lets you borrow against property you already own, while continuing to use it.\n\nCredit Saison LAP details:\n• Amount: Up to ₹5 Crores\n• Interest: Starting at 9.75% p.a.\n• Tenure: Up to 15 years\n• LTV Ratio: Up to 60-70% of property value\n• Properties: Residential, commercial, industrial\n• Doorstep Service: Yes, for onboarding\n\nLAP rates are 40-50% lower than unsecured loans because the property acts as security. You can use the funds for any purpose — business expansion, education, medical expenses, or debt consolidation.", followUp: ["How is LAP different from a home loan?","What documents are needed for LAP?"], cta: { text: "Apply for LAP", action: "apply_lap" } },
+  "How is my EMI calculated?": { text: "EMI uses the reducing balance formula:\n\nEMI = P x r x (1+r)^n / ((1+r)^n - 1)\n\nP = loan amount, r = monthly rate, n = months\n\nReal examples for Credit Saison products:\n\n• ₹10L business loan at 16% for 36 months = ₹35,157/month\n• ₹10L business loan at 16% for 60 months = ₹24,318/month\n• ₹50L LAP at 10% for 15 years = ₹53,730/month\n\nPro tip: Longer tenure = lower EMI but more total interest. A 36-month loan costs ~13% total interest, while 60-month costs ~22%.", followUp: ["What is flat rate vs reducing balance rate?","How does prepayment reduce my total interest?"], cta: { text: "Try EMI Calculator", action: "emi_calculator" } },
+  "How can I improve my credit score quickly?": { text: "Here's a prioritized improvement plan with timelines:\n\n1. Pay all overdue amounts now — impact in 30 days (biggest single factor)\n2. Reduce credit card utilization below 30% — impact in 30-45 days\n3. Set up auto-pay for all EMIs — prevents future misses\n4. Don't close old cards — they add credit history length (15% of score)\n5. Avoid new loan applications for 6 months — reduces hard inquiries\n6. Keep a mix of credit types (card + loan)\n\nRealistic timelines:\n• 30-50 point jump: 2-3 months\n• 100+ point improvement: 6-12 months\n• From 550 to 750: 12-18 months of discipline\n\nThe fastest single action? Clear any overdue payment today.", followUp: ["What is the ideal credit utilization ratio?","Does checking my own score lower it?"], cta: null },
+  "What CIBIL score do I need for a business loan?": { text: "For Credit Saison business loans:\n\n• 750+: Best rates, fastest approval, highest amounts\n• 700-749: Good chances, standard rates\n• 650-699: Possible with strong business financials (higher turnover, longer vintage)\n• Below 650: Difficult — focus on score improvement first\n\nBut score isn't everything. We also weigh:\n• Business vintage (2+ years preferred)\n• Annual turnover (₹10L+ minimum)\n• Banking transaction patterns\n• Existing debt obligations\n\nA borrower with 680 score but strong ₹2Cr turnover may get approved over someone with 760 but thin business history.", followUp: ["How can I improve my credit score quickly?","What documents do I need for a business loan?"], cta: { text: "Check Eligibility", action: "apply_business_loan" } },
+  "What is the interest rate for LAP?": { text: "Credit Saison LAP rates:\n\n• Starting: 9.75% p.a.\n• Typical range: 9.75% - 14% based on profile\n• Type: Reducing balance (not flat rate)\n\nWhat determines your rate:\n• CIBIL score: 750+ gets closest to 9.75%\n• LTV ratio: Lower ratio = better rate\n• Property type: Residential gets better rates than commercial\n• Location: Metro properties typically get better rates\n• Income stability: Salaried gets slight edge over self-employed\n\nComparison: This is 40-50% cheaper than unsecured business loans (16%+). On a ₹50L loan over 10 years, the interest saving is approximately ₹18-20L.", followUp: ["What is a loan against property (LAP)?","Can I prepay my LAP without penalty?"], cta: { text: "Apply for LAP", action: "apply_lap" } },
+};
+
+const AGENTS = [
+  { id: "credit_score", name: "Credit Score", icon: "📊", desc: "Check your score instantly", gradient: "linear-gradient(135deg, #1B5E20, #2E7D32)" },
+  { id: "pfm", name: "Money Insights", icon: "💡", desc: "Understand your spending", gradient: "linear-gradient(135deg, #0D47A1, #1565C0)" },
+  { id: "bbps", name: "Pay Bills", icon: "⚡", desc: "Quick bill payments", gradient: "linear-gradient(135deg, #BF360C, #E65100)" }
+];
+const BBPS_CATS = [{ id: "mobile", name: "Mobile Recharge", icon: "📱" },{ id: "electricity", name: "Electricity", icon: "💡" },{ id: "dth", name: "DTH", icon: "📺" },{ id: "broadband", name: "Broadband", icon: "🌐" }];
+const BANKS = [{ id: "sbi", name: "SBI", icon: "🏦" },{ id: "hdfc", name: "HDFC", icon: "🏦" },{ id: "icici", name: "ICICI", icon: "🏦" },{ id: "axis", name: "Axis", icon: "🏦" },{ id: "kotak", name: "Kotak", icon: "🏦" },{ id: "bob", name: "Bank of Baroda", icon: "🏦" }];
+
+function TypingDots() {
+  return (<div style={{ display:"flex",alignItems:"center",gap:6,padding:"10px 14px" }}><div style={{ width:24,height:24,borderRadius:"50%",background:"linear-gradient(135deg,#0A1F44,#1A3C6E)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#fff",fontWeight:700,flexShrink:0 }}>CS</div><div style={{ background:"#F0F4F8",borderRadius:"12px 12px 12px 4px",padding:"10px 14px",display:"flex",gap:4 }}>{[0,1,2].map(i=><div key={i} style={{ width:6,height:6,borderRadius:"50%",background:"#94A3B8",animation:`tb 1.2s ease-in-out ${i*.15}s infinite` }}/>)}</div></div>);
+}
+function Loader({text}) {
+  return (<div style={{ display:"flex",alignItems:"center",gap:6,padding:"10px 14px" }}><div style={{ width:24,height:24,borderRadius:"50%",background:"linear-gradient(135deg,#0A1F44,#1A3C6E)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#fff",fontWeight:700,flexShrink:0 }}>CS</div><div style={{ background:"#F0F4F8",borderRadius:"12px 12px 12px 4px",padding:"10px 14px",display:"flex",alignItems:"center",gap:8 }}><div style={{ width:14,height:14,border:"2px solid #E2E8F0",borderTopColor:"#2E7D32",borderRadius:"50%",animation:"spin .8s linear infinite" }}/><span style={{ fontSize:12,color:"#64748B",fontWeight:500 }}>{text}</span></div></div>);
+}
+
+// ═══ FINSIGHTS FULL SCREEN ═══
+function FinsightsScreen({ data, onClose }) {
+  const p = data;
+  return (<div style={{ position:"absolute",inset:0,background:"#F8FAFB",zIndex:100,display:"flex",flexDirection:"column",fontFamily:"'DM Sans',sans-serif" }}>
+    <div style={{ background:"linear-gradient(135deg,#0D47A1,#1565C0)",padding:"44px 16px 16px",flexShrink:0 }}>
+      <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+        <button onClick={onClose} style={{ background:"rgba(255,255,255,.15)",border:"none",borderRadius:8,width:32,height:32,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
+        <div style={{ flex:1 }}><div style={{ fontSize:15,fontWeight:700,color:"#fff" }}>💡 Finsights</div><div style={{ fontSize:10,color:"rgba(255,255,255,.6)" }}>{p.period}</div></div>
+      </div>
+      <div style={{ display:"flex",justifyContent:"space-around",marginTop:16 }}>
+        {[{l:"Income",v:p.income,c:"#A5D6A7"},{l:"Spending",v:p.spending,c:"#EF9A9A"},{l:"Savings",v:p.savings,c:"#90CAF9"}].map((x,i)=><div key={i} style={{ textAlign:"center" }}><div style={{ fontSize:10,color:"rgba(255,255,255,.7)" }}>{x.l}</div><div style={{ fontSize:20,fontWeight:700,color:x.c }}>₹{(x.v/1000).toFixed(0)}K</div></div>)}
+      </div>
+    </div>
+    <div style={{ flex:1,overflowY:"auto",padding:16 }}>
+      <div style={{ background:"#fff",borderRadius:14,padding:16,marginBottom:12,border:"1px solid #E2E8F0" }}>
+        <div style={{ fontSize:13,fontWeight:700,color:"#0A1F44",marginBottom:12 }}>Spending Breakdown</div>
+        {p.categories.map((c,i)=><div key={i} style={{ marginBottom:10 }}><div style={{ display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:3 }}><span style={{ fontWeight:600,color:"#334155" }}>{c.name}</span><span style={{ color:"#64748B" }}>₹{(c.amount/1000).toFixed(0)}K ({c.pct}%)</span></div><div style={{ height:8,background:"#F1F5F9",borderRadius:4 }}><div style={{ height:"100%",background:c.color,borderRadius:4,width:`${c.pct}%`,transition:"width 1s ease-out" }}/></div></div>)}
+      </div>
+      <div style={{ background:"#fff",borderRadius:14,padding:16,marginBottom:12,border:"1px solid #E2E8F0" }}>
+        <div style={{ fontSize:13,fontWeight:700,color:"#0A1F44",marginBottom:8 }}>Key Insights</div>
+        <div style={{ fontSize:12,color:"#334155",lineHeight:1.7 }}>
+          {p.categories[0].pct > 35 ? "⚠️ " : "✅ "}EMI burden is {p.categories[0].pct}% of income {p.categories[0].pct > 35 ? "(above recommended 35%)" : "(within healthy range)"}
+          {"\n\n"}💪 Savings rate of {p.savingsRate}% is {p.savingsRate > 20 ? "above" : "below"} the national average of 18%
+          {"\n\n"}📊 Additional EMI capacity: ~₹{Math.round((p.income * 0.4 - p.categories[0].amount) / 1000)}K/month
+        </div>
+      </div>
+      <div style={{ background:"linear-gradient(135deg,#E8F5E9,#C8E6C9)",borderRadius:14,padding:16,border:"1px solid #A5D6A7" }}>
+        <div style={{ fontSize:13,fontWeight:700,color:"#1B5E20",marginBottom:4 }}>Recommendation</div>
+        <div style={{ fontSize:12,color:"#2E7D32",lineHeight:1.6 }}>
+          Based on your profile, you could comfortably take a business loan with an EMI up to ₹{Math.round((p.income * 0.4 - p.categories[0].amount) / 1000)}K/month. At 16% interest over 36 months, that's roughly ₹{Math.round((p.income * 0.4 - p.categories[0].amount) * 28 / 1000)}K loan amount.
+        </div>
+      </div>
+    </div>
+  </div>);
+}
+
+// ─── MAIN ───
+function App() {
+  const [screen, setScreen] = useState("home");
+  const [msgs, setMsgs] = useState([]);
+  const [inp, setInp] = useState("");
+  const [typing, setTyping] = useState(false);
+  const [showCats, setShowCats] = useState(true);
+  const [loadTxt, setLoadTxt] = useState("");
+  const [agent, setAgent] = useState(null);
+  const [step, setStep] = useState(0);
+  const [agD, setAgD] = useState({});
+  const [inpOff, setInpOff] = useState(false);
+  const [ph, setPh] = useState("Type your question...");
+  // ═══ FIX #4: SESSION MEMORY ═══
+  const [memory, setMemory] = useState({ creditScore: null, pfmData: null, phone: null });
+  // ═══ FIX #5: FINSIGHTS SCREEN ═══
+  const [showFinsights, setShowFinsights] = useState(false);
+  const ref = useRef(null);
+
+  const scroll = useCallback(() => { setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth" }), 100); }, []);
+  useEffect(() => { scroll(); }, [msgs, typing, loadTxt, scroll]);
+
+  const ai = useCallback((text, x = {}) => { setMsgs(p => [...p, { role: "ai", text, ts: Date.now(), ...x }]); }, []);
+  const usr = useCallback((text) => { setMsgs(p => [...p, { role: "user", text, ts: Date.now() }]); }, []);
+  const w = useCallback((ms) => new Promise(r => setTimeout(r, ms)), []);
+
+  const handleAMA = useCallback((text) => {
+    const r = getResponse(text, memory);
+    setTyping(true);
+    setTimeout(() => { setTyping(false); ai(r.text, { followUp: r.followUp, cta: r.cta, clarifying: r.clarifying }); }, 700 + Math.random() * 600);
+  }, [ai, memory]);
+
+  // ── CREDIT SCORE AGENT ──
+  const startCS = useCallback(async () => {
+    setAgent("credit_score"); setStep(1); setInpOff(true);
+    setTyping(true); await w(700); setTyping(false);
+    // If we already have score in memory, offer to show it
+    if (memory.creditScore) {
+      ai(`I already have your credit score from earlier in this session:\n\n📊 Score: ${memory.creditScore.score}/900 (${memory.creditScore.rating})\n\nWould you like to refresh it or ask questions about your score?`, {
+        agentButtons: [{ label: "Refresh Score", action: "cs_yes", style: "primary" }, { label: "Tips to Improve", action: "cs_tips", style: "secondary" }]
+      });
+    } else {
+      ai("Your credit score is a 3-digit number (300-900) that determines your loan eligibility and interest rates. A higher score means better terms.\n\nI can pull your score from Experian instantly. It won't affect your score (soft inquiry only).\n\nShall I check?", {
+        agentButtons: [{ label: "Yes, check my score", action: "cs_yes", style: "primary" }, { label: "Tell me more first", action: "cs_no", style: "secondary" }]
+      });
+    }
+  }, [ai, w, memory]);
+
+  const doCS = useCallback(async (action, val) => {
+    if (action === "cs_yes") {
+      usr("Yes, check my score"); setStep(2);
+      setTyping(true); await w(500); setTyping(false);
+      // ═══ FIX #4: REUSE PHONE FROM MEMORY ═══
+      if (memory.phone) {
+        ai(`I have your number ending in ...${memory.phone.slice(-4)} from earlier. Should I use this?`, {
+          agentButtons: [{ label: `Use ...${memory.phone.slice(-4)}`, action: "cs_use_phone", style: "primary" }, { label: "Use different number", action: "cs_new_phone", style: "secondary" }]
+        });
+      } else {
+        ai("To pull your report securely, I need two details.\n\n🔒 Your data is encrypted and used only for this check. RBI-compliant process.\n\nPlease enter your 10-digit mobile number:");
+        setInpOff(false); setPh("Enter mobile number...");
+      }
+    } else if (action === "cs_tips") {
+      usr("Tips to improve"); setAgent(null); setInpOff(false); setPh("Type your question...");
+      handleAMA("How can I improve my credit score quickly?");
+    } else if (action === "cs_no") {
+      usr("Tell me more first"); setAgent(null); setInpOff(false); setPh("Type your question...");
+      handleAMA("What is a credit score and why does it matter?");
+    } else if (action === "cs_use_phone") {
+      usr(`Use ...${memory.phone.slice(-4)}`); setStep(3);
+      setTyping(true); await w(400); setTyping(false);
+      ai("Now enter your PAN number:"); setInpOff(false); setPh("PAN (e.g. ABCDE1234F)...");
+    } else if (action === "cs_new_phone") {
+      usr("Use different number"); setStep(2);
+      ai("Enter your 10-digit mobile number:"); setInpOff(false); setPh("Enter mobile number...");
+    } else if (step === 2 && val) {
+      usr(val); setMemory(p => ({ ...p, phone: val })); setStep(3);
+      setTyping(true); await w(400); setTyping(false);
+      ai("Now enter your PAN number:"); setPh("PAN (e.g. ABCDE1234F)...");
+    } else if (step === 3 && val) {
+      usr(val.toUpperCase()); setStep(4); setInpOff(true); setPh("Type your question...");
+      setLoadTxt("Connecting to Experian..."); await w(1500);
+      setLoadTxt("Fetching your credit report..."); await w(2000);
+      setLoadTxt("Analyzing credit factors..."); await w(1200); setLoadTxt("");
+      const scoreData = { score: 762, maxScore: 900, rating: "Good", ratingColor: "#2E7D32", factors: { positive: ["On-time payments (98%)","Low credit utilization (22%)","Long credit history (6+ yrs)"], negative: ["Recent hard inquiry (1 month ago)","7 active accounts (high)"] } };
+      setMemory(p => ({ ...p, creditScore: scoreData }));
+      ai("", { creditScoreCard: scoreData });
+      await w(600);
+      ai(`Your score of ${scoreData.score} puts you in the ${scoreData.rating} range.\n\nWhat this means for Credit Saison products:\n• Business Loan: Eligible for up to ₹75L at 16-18% p.a.\n• LAP: Eligible for up to ₹5Cr at 9.75-11% p.a.\n\nTo reach Excellent (800+), focus on reducing your 7 active accounts and avoiding new inquiries for 3-6 months. Your 98% payment track record is strong.`, {
+        followUp: ["How can I improve my credit score quickly?","What types of business loans does Credit Saison offer?"],
+        cta: { text: "Explore Loan Options", action: "apply" }
+      });
+      setAgent(null); setInpOff(false);
+    }
+  }, [step, ai, usr, w, memory, handleAMA]);
+
+  // ── PFM AGENT ──
+  const startPFM = useCallback(async () => {
+    setAgent("pfm"); setStep(1); setInpOff(true);
+    setTyping(true); await w(700); setTyping(false);
+    if (memory.pfmData) {
+      ai("I already have your financial data from this session. Would you like to view your Finsights dashboard or refresh the data?", {
+        agentButtons: [{ label: "Open Finsights", action: "pfm_open_finsights", style: "primary" }, { label: "Refresh Data", action: "pfm_yes", style: "secondary" }]
+      });
+    } else {
+      ai("Money Insights connects to your bank account securely to give you a full picture of income, spending, and savings.\n\n🔒 Powered by Account Aggregator (RBI-regulated):\n• End-to-end encrypted\n• You control what's shared\n• Revoke access anytime\n• Data used only for insights, never shared\n\nReady to link your account?", {
+        agentButtons: [{ label: "Link my account", action: "pfm_yes", style: "primary" }, { label: "How does AA work?", action: "pfm_learn", style: "secondary" }]
+      });
+    }
+  }, [ai, w, memory]);
+
+  const doPFM = useCallback(async (action, val) => {
+    if (action === "pfm_open_finsights") {
+      usr("Open Finsights"); setShowFinsights(true); setAgent(null); setInpOff(false); setPh("Type your question...");
+    } else if (action === "pfm_yes") {
+      usr("Link my account"); setStep(2);
+      setTyping(true); await w(500); setTyping(false);
+      if (memory.phone) {
+        ai(`Using your number ...${memory.phone.slice(-4)}. Select your bank:`, {
+          agentButtons: [...BANKS.map(b => ({ label: `${b.icon} ${b.name}`, action: `pfm_bank_${b.id}`, style: "outline" })), { label: "🔍 View all banks", action: "pfm_all_banks", style: "secondary" }]
+        });
+        setStep(3);
+      } else {
+        ai("Enter your registered mobile number:");
+        setInpOff(false); setPh("Enter mobile number...");
+      }
+    } else if (action === "pfm_learn") {
+      usr("How does AA work?");
+      setTyping(true); await w(500); setTyping(false);
+      ai("Account Aggregator (AA) is like a secure courier for your financial data.\n\n1. You choose which bank to link\n2. Your bank sends an OTP to verify it's you\n3. You grant consent (you decide duration and scope)\n4. Data flows encrypted from bank to our system\n5. We analyze and show insights\n\nNo one — not even Credit Saison — can access your data without your active OTP-verified consent. You can revoke at any time.", {
+        agentButtons: [{ label: "Proceed", action: "pfm_yes", style: "primary" }, { label: "Not now", action: "pfm_cancel", style: "secondary" }]
+      });
+    } else if (action === "pfm_cancel") {
+      usr("Not now"); setAgent(null); setInpOff(false); setPh("Type your question...");
+      ai("No problem! Money Insights is available anytime from the home screen. What else can I help with?");
+    } else if (action === "pfm_all_banks") {
+      usr("View all banks");
+      ai("Here are more banks you can link:", {
+        agentButtons: [
+          ...BANKS.map(b => ({ label: `${b.icon} ${b.name}`, action: `pfm_bank_${b.id}`, style: "outline" })),
+          { label: "🏦 PNB", action: "pfm_bank_pnb", style: "outline" },
+          { label: "🏦 Canara", action: "pfm_bank_canara", style: "outline" },
+          { label: "🏦 IndusInd", action: "pfm_bank_indusind", style: "outline" },
+        ]
+      });
+    } else if (step === 2 && val) {
+      usr(val); setMemory(p => ({ ...p, phone: val })); setStep(3); setInpOff(true);
+      setTyping(true); await w(600); setTyping(false);
+      ai("Select your bank:", {
+        agentButtons: [...BANKS.map(b => ({ label: `${b.icon} ${b.name}`, action: `pfm_bank_${b.id}`, style: "outline" })), { label: "🔍 View all banks", action: "pfm_all_banks", style: "secondary" }]
+      });
+    } else if (action?.startsWith("pfm_bank_")) {
+      const bank = action.replace("pfm_bank_", "").toUpperCase();
+      usr(`🏦 ${bank}`); setStep(4);
+      setTyping(true); await w(500); setTyping(false);
+      // ═══ FIX #5: PROPER OTP UI ═══
+      ai("", { otpInput: { bank, message: `An OTP has been sent to your number for ${bank} consent verification.\n\nThis verifies your identity and grants read-only access to your transaction data for 3 months.` } });
+      setInpOff(false); setPh("Enter 6-digit OTP...");
+    } else if (step === 4 && val) {
+      usr("••••••"); setStep(5); setInpOff(true);
+      setLoadTxt("Verifying consent..."); await w(1000);
+      setLoadTxt("Connecting to your bank securely..."); await w(1500);
+      setLoadTxt("Analyzing 3 months of transactions..."); await w(2000); setLoadTxt("");
+      const pfm = { period: "Jan - Mar 2026", income: 185000, spending: 142000, savings: 43000, savingsRate: 23,
+        categories: [
+          { name: "EMIs & Loans", amount: 48000, pct: 34, color: "#C62828" },
+          { name: "Rent & Utilities", amount: 32000, pct: 23, color: "#E65100" },
+          { name: "Food & Dining", amount: 24000, pct: 17, color: "#F9A825" },
+          { name: "Shopping", amount: 18000, pct: 13, color: "#1565C0" },
+          { name: "Others", amount: 20000, pct: 14, color: "#64748B" },
+        ]};
+      setMemory(p => ({ ...p, pfmData: pfm }));
+      ai("", { pfmCard: pfm });
+      await w(600);
+      const emiPct = Math.round((pfm.categories[0].amount / pfm.income) * 100);
+      const headroom = Math.round((pfm.income * 0.4 - pfm.categories[0].amount) / 1000);
+      ai(`Here's your financial summary:\n\n• EMI burden: ${emiPct}% of income ${emiPct < 35 ? "(healthy range)" : "(approaching upper limit of 40%)"}\n• Savings rate: ${pfm.savingsRate}% (above the 18% national average)\n• Additional EMI capacity: ~₹${headroom}K/month\n\nYou can now ask me anything about your finances — like "How much do I spend on food?" or "Can I afford another EMI?" I'll answer from your bank data.`, {
+        followUp: ["What is my monthly spending on EMIs?","How much did I spend on dining?","Can I afford another EMI?","How can I save more?"],
+        cta: { text: "Open Finsights", action: "open_finsights" },
+        finsightsAction: true
+      });
+      setAgent(null); setInpOff(false); setPh("Type your question...");
+    }
+  }, [step, ai, usr, w, memory]);
+
+  // ── BBPS AGENT ──
+  const startBBPS = useCallback(async () => {
+    setAgent("bbps"); setStep(1); setInpOff(true);
+    setTyping(true); await w(400); setTyping(false);
+    ai("What would you like to pay?", {
+      agentButtons: BBPS_CATS.map(c => ({ label: `${c.icon} ${c.name}`, action: `bbps_cat_${c.id}`, style: "outline" }))
+    });
+  }, [ai, w]);
+
+  const doBBPS = useCallback(async (action, val) => {
+    if (action?.startsWith("bbps_cat_")) {
+      const cat = BBPS_CATS.find(c => c.id === action.replace("bbps_cat_", ""));
+      usr(`${cat.icon} ${cat.name}`); setAgD(p => ({ ...p, category: cat.id })); setStep(2);
+      setInpOff(false); setTyping(true); await w(300); setTyping(false);
+      const prompts = { mobile: "Enter the 10-digit mobile number:", electricity: "Enter your consumer / account number:", dth: "Enter your subscriber ID:", broadband: "Enter your account / customer ID:" };
+      ai(prompts[cat.id]); setPh(cat.id === "mobile" ? "10-digit number..." : "Account / Consumer number...");
+    } else if (step === 2 && val) {
+      usr(val); setAgD(p => ({ ...p, accountId: val })); setStep(3); setInpOff(true);
+      setLoadTxt("Fetching bill details via BBPS..."); await w(1600); setLoadTxt("");
+      const bills = { mobile: { biller: "Jio Prepaid", amount: 299, plan: "2GB/day, 28 days" }, electricity: { biller: "BSES Rajdhani", amount: 2450, plan: "Bill for Mar 2026" }, dth: { biller: "Tata Play", amount: 399, plan: "Monthly pack" }, broadband: { biller: "Airtel Xstream", amount: 999, plan: "100 Mbps Unlimited" } };
+      const bill = bills[agD.category] || bills.mobile;
+      setAgD(p => ({ ...p, bill }));
+      ai("", { billCard: { biller: bill.biller, amount: bill.amount, detail: bill.plan, accountId: val } });
+      await w(200);
+      ai("Confirm payment?", { agentButtons: [{ label: `Pay ₹${bill.amount}`, action: "bbps_pay", style: "primary" }, { label: "Cancel", action: "bbps_cancel", style: "secondary" }] });
+    } else if (action === "bbps_pay") {
+      usr("Confirm payment"); setStep(4);
+      setLoadTxt("Processing via BBPS..."); await w(2000); setLoadTxt("");
+      const txn = "TXN" + Math.random().toString(36).substr(2, 9).toUpperCase();
+      ai("", { successCard: { title: "Payment Successful!", txnId: txn, amount: agD.bill?.amount || 0, biller: agD.bill?.biller || "" } });
+      await w(400);
+      ai("Done! Anything else I can help with?", { followUp: ["What types of business loans does Credit Saison offer?","How can I improve my credit score quickly?"] });
+      setAgent(null); setInpOff(false); setPh("Type your question...");
+    } else if (action === "bbps_cancel") {
+      usr("Cancel"); setAgent(null); setInpOff(false); setPh("Type your question...");
+      ai("Payment cancelled. What else can I help with?");
+    }
+  }, [step, agD, ai, usr, w]);
+
+  // ── UNIFIED SEND ──
+  const send = useCallback((text) => {
+    if (!text.trim() || inpOff) return;
+    const t = text.trim(); setInp(""); setShowCats(false);
+    if (agent === "credit_score") { doCS(null, t); return; }
+    if (agent === "pfm") { doPFM(null, t); return; }
+    if (agent === "bbps") { doBBPS(null, t); return; }
+    usr(t);
+    const intent = detectIntent(t);
+    if (intent === "agent_credit_score") setTimeout(() => startCS(), 300);
+    else if (intent === "agent_pfm") setTimeout(() => startPFM(), 300);
+    else if (intent === "agent_bbps") setTimeout(() => startBBPS(), 300);
+    else handleAMA(t);
+  }, [inpOff, agent, doCS, doPFM, doBBPS, usr, startCS, startPFM, startBBPS, handleAMA]);
+
+  const btn = useCallback((action) => {
+    if (action === "open_finsights" || action === "pfm_open_finsights") { setShowFinsights(true); return; }
+    if (action === "trigger_cs_agent") { startCS(); return; }
+    if (action === "trigger_pfm_agent") { startPFM(); return; }
+    if (agent === "credit_score") doCS(action);
+    else if (agent === "pfm") doPFM(action);
+    else if (agent === "bbps") doBBPS(action);
+  }, [agent, doCS, doPFM, doBBPS, startCS, startPFM]);
+
+  const openChat = (preQ = null, preCat = null) => {
+    setScreen("chat"); setShowCats(true); setAgent(null); setStep(0); setAgD({}); setInpOff(false); setPh("Type your question...");
+    const welcome = { role: "ai", ts: Date.now(),
+      text: preCat ? `Here are popular questions about ${preCat}:` : "Hi! 👋 I can answer questions, check your credit score, analyze your finances, or help pay bills.\n\nPick a topic or just type anything.",
+      topicQuestions: preCat ? QB[preCat].questions.map(i => i.q) : null, topicIcon: preCat ? QB[preCat].icon : null, topicName: preCat || null
+    };
+    if (preQ) {
+      setMsgs([welcome, { role: "user", text: preQ, ts: Date.now() + 1 }]);
+      setShowCats(false);
+      const intent = detectIntent(preQ);
+      if (intent === "agent_credit_score") setTimeout(() => startCS(), 300);
+      else if (intent === "agent_pfm") setTimeout(() => startPFM(), 300);
+      else if (intent === "agent_bbps") setTimeout(() => startBBPS(), 300);
+      else handleAMA(preQ);
+    } else setMsgs([welcome]);
+  };
+
+  const startAgentHome = (id) => {
+    setScreen("chat"); setShowCats(false); setAgD({});
+    setMsgs([{ role: "ai", ts: Date.now(), text: "Hi! 👋 Let me help you with that." }]);
+    if (id === "credit_score") setTimeout(() => startCS(), 500);
+    else if (id === "pfm") setTimeout(() => startPFM(), 500);
+    else if (id === "bbps") setTimeout(() => startBBPS(), 500);
+  };
+
+  const reset = () => { setScreen("home"); setMsgs([]); setShowCats(true); setAgent(null); setStep(0); setAgD({}); setInp(""); setInpOff(false); setLoadTxt(""); setPh("Type your question..."); setShowFinsights(false); };
+
+  const sugs = (() => {
+    if (inp.length < 2 || inpOff) return [];
+    const l = inp.toLowerCase(); const m = [];
+    if ("check my credit score".includes(l)||"cibil".includes(l)||"see my score".includes(l)) m.push("Check my credit score");
+    if ("analyze my spending".includes(l)||"money insight".includes(l)) m.push("Analyze my spending");
+    if ("pay my bill".includes(l)||"recharge".includes(l)) m.push("Pay my bills");
+    Object.values(QB).forEach(cat => cat.questions.forEach(({ q }) => { if (q.toLowerCase().includes(l)) m.push(q); }));
+    return [...new Set(m)].slice(0, 4);
+  })();
+
+  const CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@700&display=swap');
+  @keyframes tb{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+  @keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes mi{from{opacity:0;transform:translateY(5px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+  @keyframes pg{0%,100%{box-shadow:0 3px 16px rgba(46,125,50,.3)}50%{box-shadow:0 3px 24px rgba(46,125,50,.5)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  *{box-sizing:border-box;margin:0;padding:0}::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:10px}`;
+
+  const F = "'DM Sans',sans-serif";
+
+  // ─── HOME ───
+  if (screen === "home") return (
+    <div style={{ width:"100%",maxWidth:390,margin:"0 auto",height:"100vh",maxHeight:844,background:"#F8FAFB",fontFamily:F,position:"relative",overflow:"hidden",borderRadius:20,boxShadow:"0 8px 40px rgba(0,0,0,.12)" }}>
+      <style>{CSS}</style>
+      <div style={{ padding:"12px 20px 6px",display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:13,fontWeight:600,color:"#0A1F44" }}><span>9:41</span><div style={{ display:"flex",gap:6 }}><svg width="16" height="12" viewBox="0 0 16 12"><rect x="0" y="6" width="3" height="6" rx="1" fill="#0A1F44"/><rect x="4.5" y="4" width="3" height="8" rx="1" fill="#0A1F44"/><rect x="9" y="1.5" width="3" height="10.5" rx="1" fill="#0A1F44"/><rect x="13" y="0" width="3" height="12" rx="1" fill="#0A1F44"/></svg><svg width="22" height="12" viewBox="0 0 22 12"><rect x=".5" y=".5" width="19" height="11" rx="2" stroke="#0A1F44" strokeWidth="1" fill="none"/><rect x="20" y="3.5" width="2" height="5" rx="1" fill="#0A1F44"/><rect x="2" y="2" width="14" height="8" rx="1" fill="#2E7D32"/></svg></div></div>
+      <div style={{ padding:"6px 20px 4px",display:"flex",alignItems:"center",gap:10 }}>
+        <div style={{ width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#0A1F44,#1A3C6E)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:700 }}>CS</div>
+        <div><div style={{ fontSize:16,fontWeight:700,color:"#0A1F44" }}>Credit Saison</div><div style={{ fontSize:10,color:"#64748B" }}>Your financial partner</div></div>
+      </div>
+      <div style={{ overflowY:"auto",height:"calc(100% - 128px)",paddingBottom:16 }}>
+        <div style={{ padding:"6px 20px 12px" }}>
+          <div style={{ background:"linear-gradient(135deg,#0A1F44,#1A3C6E 60%,#2E7D32)",borderRadius:16,padding:"20px 18px",position:"relative",overflow:"hidden" }}>
+            <div style={{ position:"absolute",top:-18,right:-18,width:80,height:80,borderRadius:"50%",background:"rgba(255,255,255,.06)" }}/>
+            <div style={{ fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,color:"#fff",lineHeight:1.2,marginBottom:5 }}>Ask, Learn, or Take Action</div>
+            <div style={{ fontSize:11.5,color:"rgba(255,255,255,.7)",lineHeight:1.5,marginBottom:12 }}>Credit scores, loans, bill payments, and financial insights.</div>
+            <button onClick={()=>openChat()} style={{ background:"#2E7D32",color:"#fff",border:"none",borderRadius:10,padding:"9px 18px",fontSize:12.5,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6,animation:"pg 2s ease-in-out infinite",fontFamily:F }}>Start Conversation <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6h7M7 3.5l2.5 2.5L7 8.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
+          </div>
+        </div>
+        <div style={{ padding:"0 20px" }}>
+          <div style={{ fontSize:13,fontWeight:700,color:"#0A1F44",marginBottom:7 }}>Quick Actions</div>
+          <div style={{ display:"flex",gap:8,overflowX:"auto",paddingBottom:4 }}>
+            {AGENTS.map((a,i)=><button key={a.id} onClick={()=>startAgentHome(a.id)} style={{ background:a.gradient,border:"none",borderRadius:12,padding:"12px 13px 10px",cursor:"pointer",minWidth:110,flex:"0 0 auto",display:"flex",flexDirection:"column",gap:3,textAlign:"left",animation:`fu .4s ease-out ${i*.07}s both`,fontFamily:F,position:"relative",overflow:"hidden" }}>
+              <div style={{ position:"absolute",bottom:-6,right:-6,width:32,height:32,borderRadius:"50%",background:"rgba(255,255,255,.1)" }}/>
+              <span style={{ fontSize:20 }}>{a.icon}</span><span style={{ fontSize:11.5,fontWeight:700,color:"#fff" }}>{a.name}</span><span style={{ fontSize:9.5,color:"rgba(255,255,255,.7)" }}>{a.desc}</span>
+            </button>)}
+          </div>
+        </div>
+        <div style={{ padding:"12px 20px 0" }}>
+          <div style={{ fontSize:13,fontWeight:700,color:"#0A1F44",marginBottom:7 }}>Explore Topics</div>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:7 }}>
+            {Object.entries(QB).slice(0,4).map(([n,c],i)=><button key={n} onClick={()=>openChat(null,n)} style={{ background:"#fff",border:"1px solid #E2E8F0",borderRadius:11,padding:"10px",cursor:"pointer",display:"flex",alignItems:"flex-start",gap:7,textAlign:"left",fontFamily:F,animation:`fu .4s ease-out ${(i+3)*.06}s both` }}>
+              <span style={{ fontSize:17 }}>{c.icon}</span><div><div style={{ fontSize:11.5,fontWeight:600,color:"#0A1F44" }}>{n}</div><div style={{ fontSize:9.5,color:"#94A3B8",marginTop:1 }}>{c.questions.length}q</div></div>
+            </button>)}
+          </div>
+        </div>
+        <div style={{ padding:"12px 20px 0" }}>
+          <div style={{ fontSize:13,fontWeight:700,color:"#0A1F44",marginBottom:5 }}>Trending</div>
+          {["What CIBIL score do I need for a business loan?","How can I improve my credit score quickly?","What is the interest rate for LAP?"].map((q,i)=><button key={i} onClick={()=>openChat(q)} style={{ width:"100%",background:"#fff",border:"1px solid #E2E8F0",borderRadius:9,padding:"8px 10px",marginBottom:5,cursor:"pointer",display:"flex",alignItems:"center",gap:7,textAlign:"left",fontFamily:F,animation:`fu .4s ease-out ${(i+7)*.06}s both` }}>
+            <span style={{ fontSize:9,fontWeight:700,color:"#2E7D32",background:"#E8F5E9",borderRadius:4,padding:"2px 4px" }}>🔥</span>
+            <span style={{ fontSize:11.5,color:"#334155",fontWeight:500,flex:1 }}>{q}</span>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3.5 2l3.5 3-3.5 3" stroke="#94A3B8" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>)}
+        </div>
+      </div>
+      <div style={{ position:"absolute",bottom:0,left:0,right:0,background:"#fff",borderTop:"1px solid #E2E8F0",padding:"8px 0 26px",display:"flex",justifyContent:"space-around" }}>
+        {[{icon:"🏠",label:"Home",active:true,fn:null},{icon:"💬",label:"AMA",active:false,fn:()=>openChat()}].map((t,i)=><button key={i} onClick={t.fn} style={{ background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,fontFamily:F,padding:"0 30px" }}>
+          <span style={{ fontSize:20 }}>{t.icon}</span><span style={{ fontSize:10,fontWeight:t.active?700:500,color:t.active?"#0A1F44":"#94A3B8" }}>{t.label}</span>
+        </button>)}
+      </div>
+    </div>
+  );
+
+  // ─── CHAT ───
+  return (
+    <div style={{ width:"100%",maxWidth:390,margin:"0 auto",height:"100vh",maxHeight:844,background:"#F8FAFB",fontFamily:F,display:"flex",flexDirection:"column",borderRadius:20,boxShadow:"0 8px 40px rgba(0,0,0,.12)",overflow:"hidden",position:"relative" }}>
+      <style>{CSS}</style>
+      {showFinsights && memory.pfmData && <FinsightsScreen data={memory.pfmData} onClose={() => setShowFinsights(false)} />}
+      <div style={{ background:"linear-gradient(135deg,#0A1F44,#1A3C6E)",padding:"42px 12px 10px",flexShrink:0,display:"flex",alignItems:"center",gap:7 }}>
+        <button onClick={reset} style={{ background:"rgba(255,255,255,.12)",border:"none",borderRadius:8,width:30,height:30,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 3L4.5 7 9 11" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
+        <div style={{ width:26,height:26,borderRadius:7,background:"linear-gradient(135deg,#2E7D32,#43A047)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:8,fontWeight:700 }}>CS</div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:13,fontWeight:700,color:"#fff" }}>{agent ? AGENTS.find(a=>a.id===agent)?.name || "Ask Me Anything" : "Ask Me Anything"}</div>
+          <div style={{ fontSize:9,color:"rgba(255,255,255,.5)",display:"flex",alignItems:"center",gap:3 }}><span style={{ width:5,height:5,borderRadius:"50%",background:"#4CAF50" }}/>{agent ? "Agent active" : "Always available"}{memory.creditScore ? " • Score saved" : ""}</div>
+        </div>
+        <button onClick={()=>setShowCats(s=>!s)} style={{ background:showCats?"rgba(46,125,50,.3)":"rgba(255,255,255,.12)",border:"none",borderRadius:8,width:30,height:30,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1" width="4.5" height="4.5" rx="1" stroke="#fff" strokeWidth="1.1"/><rect x="7.5" y="1" width="4.5" height="4.5" rx="1" stroke="#fff" strokeWidth="1.1"/><rect x="1" y="7.5" width="4.5" height="4.5" rx="1" stroke="#fff" strokeWidth="1.1"/><rect x="7.5" y="7.5" width="4.5" height="4.5" rx="1" stroke="#fff" strokeWidth="1.1"/></svg></button>
+      </div>
+
+      {showCats && !agent && <div style={{ flexShrink:0,background:"#fff",borderBottom:"1px solid #E2E8F0",padding:"6px 0" }}>
+        <div style={{ display:"flex",gap:5,overflowX:"auto",padding:"0 10px",scrollbarWidth:"none" }}>
+          {AGENTS.map(a=><button key={a.id} onClick={()=>{setShowCats(false);if(a.id==="credit_score")startCS();else if(a.id==="pfm")startPFM();else startBBPS();}} style={{ background:a.gradient,border:"none",borderRadius:14,padding:"5px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:3,whiteSpace:"nowrap",fontSize:10.5,fontWeight:600,color:"#fff",fontFamily:F }}><span style={{ fontSize:11 }}>{a.icon}</span>{a.name}</button>)}
+          <div style={{ width:1,background:"#E2E8F0",flexShrink:0,margin:"2px 1px" }}/>
+          {Object.entries(QB).map(([n,c])=><button key={n} onClick={()=>{setShowCats(false);ai(`Here are questions about ${n}:`,{topicQuestions:c.questions.map(i=>i.q),topicIcon:c.icon,topicName:n});}} style={{ background:"#F1F5F9",border:"1px solid #E2E8F0",borderRadius:14,padding:"5px 9px",cursor:"pointer",display:"flex",alignItems:"center",gap:3,whiteSpace:"nowrap",fontSize:10.5,fontWeight:600,color:"#334155",fontFamily:F }}><span style={{ fontSize:10 }}>{c.icon}</span>{n}</button>)}
+        </div>
+      </div>}
+
+      <div style={{ flex:1,overflowY:"auto",padding:"7px 10px",display:"flex",flexDirection:"column",gap:2 }}>
+        {msgs.map((m,i)=><div key={i} style={{ display:"flex",flexDirection:"column",alignItems:m.role==="user"?"flex-end":"flex-start",animation:"mi .25s ease-out" }}>
+          <div style={{ display:"flex",alignItems:"flex-end",gap:5,maxWidth:"88%" }}>
+            {m.role==="ai"&&<div style={{ width:22,height:22,borderRadius:"50%",flexShrink:0,background:"linear-gradient(135deg,#0A1F44,#1A3C6E)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:7,color:"#fff",fontWeight:700 }}>CS</div>}
+            {m.text&&<div style={{ background:m.role==="user"?"linear-gradient(135deg,#0A1F44,#1A3C6E)":"#fff",color:m.role==="user"?"#fff":"#1E293B",borderRadius:m.role==="user"?"12px 12px 3px 12px":"12px 12px 12px 3px",padding:"8px 11px",fontSize:12,lineHeight:1.5,boxShadow:m.role==="ai"?"0 1px 2px rgba(0,0,0,.04)":"none",border:m.role==="ai"?"1px solid #E2E8F0":"none",whiteSpace:"pre-line" }}>{m.text}</div>}
+          </div>
+
+          {m.creditScoreCard&&(()=>{const c=m.creditScoreCard;return <div style={{ marginLeft:27,marginTop:5,background:"#fff",border:"1px solid #E2E8F0",borderRadius:13,padding:"14px 12px",width:"calc(100% - 32px)",boxShadow:"0 2px 5px rgba(0,0,0,.04)" }}>
+            <div style={{ textAlign:"center",marginBottom:8 }}><svg width="100" height="100" viewBox="0 0 100 100" style={{ display:"block",margin:"0 auto" }}><circle cx="50" cy="50" r="40" fill="none" stroke="#E2E8F0" strokeWidth="8"/><circle cx="50" cy="50" r="40" fill="none" stroke={c.ratingColor} strokeWidth="8" strokeDasharray="251" strokeDashoffset={251-(251*c.score/c.maxScore)} strokeLinecap="round" transform="rotate(-90 50 50)" style={{ transition:"stroke-dashoffset 1.5s ease-out" }}/><text x="50" y="46" textAnchor="middle" style={{ fontSize:24,fontWeight:700,fill:"#0A1F44",fontFamily:"DM Sans" }}>{c.score}</text><text x="50" y="62" textAnchor="middle" style={{ fontSize:9,fontWeight:600,fill:c.ratingColor,fontFamily:"DM Sans" }}>{c.rating}</text></svg><div style={{ fontSize:8,color:"#94A3B8",marginTop:2 }}>out of {c.maxScore} (Experian)</div></div>
+            <div style={{ display:"flex",gap:6 }}><div style={{ flex:1 }}><div style={{ fontSize:8,fontWeight:700,color:"#2E7D32",marginBottom:2,textTransform:"uppercase",letterSpacing:.5 }}>Positive</div>{c.factors.positive.map((f,fi)=><div key={fi} style={{ fontSize:9.5,color:"#334155",lineHeight:1.5 }}>+ {f}</div>)}</div><div style={{ flex:1 }}><div style={{ fontSize:8,fontWeight:700,color:"#C62828",marginBottom:2,textTransform:"uppercase",letterSpacing:.5 }}>Needs Work</div>{c.factors.negative.map((f,fi)=><div key={fi} style={{ fontSize:9.5,color:"#334155",lineHeight:1.5 }}>- {f}</div>)}</div></div>
+          </div>;})()}
+
+          {m.pfmCard&&(()=>{const p=m.pfmCard;return <div style={{ marginLeft:27,marginTop:5,background:"#fff",border:"1px solid #E2E8F0",borderRadius:13,padding:"12px",width:"calc(100% - 32px)",boxShadow:"0 2px 5px rgba(0,0,0,.04)" }}>
+            <div style={{ fontSize:9,color:"#94A3B8",fontWeight:600,marginBottom:6 }}>{p.period}</div>
+            <div style={{ display:"flex",justifyContent:"space-between",marginBottom:10 }}>{[{l:"Income",v:p.income,c:"#2E7D32"},{l:"Spending",v:p.spending,c:"#C62828"},{l:"Savings",v:p.savings,c:"#1565C0"}].map((x,xi)=><div key={xi} style={{ textAlign:"center" }}><div style={{ fontSize:8.5,color:"#94A3B8",fontWeight:600 }}>{x.l}</div><div style={{ fontSize:14,fontWeight:700,color:x.c }}>₹{(x.v/1000).toFixed(0)}K</div></div>)}</div>
+            <div style={{ fontSize:10,fontWeight:700,color:"#0A1F44",marginBottom:5 }}>Spending</div>
+            {p.categories.map((c,ci)=><div key={ci} style={{ marginBottom:5 }}><div style={{ display:"flex",justifyContent:"space-between",fontSize:9.5,marginBottom:2 }}><span style={{ color:"#334155" }}>{c.name}</span><span style={{ color:"#64748B" }}>₹{(c.amount/1000).toFixed(0)}K ({c.pct}%)</span></div><div style={{ height:5,background:"#F1F5F9",borderRadius:3 }}><div style={{ height:"100%",background:c.color,borderRadius:3,width:`${c.pct}%`,transition:"width 1s ease-out" }}/></div></div>)}
+          </div>;})()}
+
+          {m.otpInput&&<div style={{ marginLeft:27,marginTop:5,background:"#fff",border:"1px solid #E2E8F0",borderRadius:13,padding:"14px 12px",width:"calc(100% - 32px)" }}>
+            <div style={{ display:"flex",alignItems:"center",gap:5,marginBottom:8 }}><span style={{ fontSize:16 }}>🔐</span><span style={{ fontSize:11,fontWeight:700,color:"#0A1F44" }}>OTP Verification</span></div>
+            <div style={{ fontSize:10.5,color:"#475569",lineHeight:1.5,marginBottom:8 }}>{m.otpInput.message}</div>
+            <div style={{ display:"flex",gap:4,marginBottom:6 }}>{[1,2,3,4,5,6].map(n=><div key={n} style={{ width:32,height:36,borderRadius:7,border:"1.5px solid #CBD5E1",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,color:"#0A1F44",background:"#F8FAFB" }}>•</div>)}</div>
+            <div style={{ fontSize:9,color:"#94A3B8" }}>Enter the 6-digit code sent to your phone</div>
+          </div>}
+
+          {m.billCard&&(()=>{const b=m.billCard;return <div style={{ marginLeft:27,marginTop:5,background:"#fff",border:"1px solid #E2E8F0",borderRadius:11,padding:"11px 12px",width:"calc(100% - 32px)" }}>
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4 }}><div style={{ fontSize:12,fontWeight:700,color:"#0A1F44" }}>{b.biller}</div><div style={{ fontSize:16,fontWeight:700,color:"#0A1F44" }}>₹{b.amount}</div></div>
+            <div style={{ fontSize:10,color:"#64748B" }}>{b.detail}</div><div style={{ fontSize:9,color:"#94A3B8",marginTop:1 }}>A/C: {b.accountId}</div>
+          </div>;})()}
+
+          {m.successCard&&(()=>{const s=m.successCard;return <div style={{ marginLeft:27,marginTop:5,background:"linear-gradient(135deg,#E8F5E9,#C8E6C9)",border:"1px solid #A5D6A7",borderRadius:11,padding:"12px",width:"calc(100% - 32px)",textAlign:"center" }}>
+            <div style={{ fontSize:26,marginBottom:3 }}>✅</div><div style={{ fontSize:13,fontWeight:700,color:"#1B5E20" }}>{s.title}</div>
+            <div style={{ fontSize:10.5,color:"#2E7D32",marginTop:2 }}>₹{s.amount} paid to {s.biller}</div><div style={{ fontSize:8,color:"#64748B",marginTop:3,fontFamily:"monospace" }}>Txn: {s.txnId}</div>
+          </div>;})()}
+
+          {m.agentButtons&&<div style={{ marginLeft:27,marginTop:5,display:"flex",flexWrap:"wrap",gap:4 }}>
+            {m.agentButtons.map((b,bi)=><button key={bi} onClick={()=>btn(b.action)} style={{ background:b.style==="primary"?"linear-gradient(135deg,#2E7D32,#43A047)":b.style==="outline"?"#fff":"#F1F5F9",color:b.style==="primary"?"#fff":"#334155",border:b.style==="primary"?"none":"1px solid #E2E8F0",borderRadius:8,padding:"7px 11px",fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:F,boxShadow:b.style==="primary"?"0 2px 5px rgba(46,125,50,.2)":"none" }}>{b.label}</button>)}
+          </div>}
+
+          {m.cta&&<div style={{ marginLeft:27,marginTop:5 }}><button onClick={()=>btn(m.cta.action||m.cta.text)} style={{ background:"linear-gradient(135deg,#2E7D32,#43A047)",color:"#fff",border:"none",borderRadius:8,padding:"7px 13px",fontSize:11,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:4,boxShadow:"0 2px 5px rgba(46,125,50,.2)",fontFamily:F }}>{m.cta.text} <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 5h5M5.5 3l2 2-2 2" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg></button></div>}
+
+          {m.followUp?.length>0&&<div style={{ marginLeft:27,marginTop:5,display:"flex",flexDirection:"column",gap:3 }}>
+            <span style={{ fontSize:9,color:"#94A3B8",fontWeight:600 }}>{m.clarifying?"Try these:":"Related"}</span>
+            {m.followUp.map((f,fi)=><button key={fi} onClick={()=>send(f)} style={{ background:"#F1F5F9",border:"1px solid #E2E8F0",borderRadius:7,padding:"6px 9px",cursor:"pointer",textAlign:"left",fontSize:11,color:"#334155",fontWeight:500,display:"flex",alignItems:"center",gap:4,fontFamily:F }}><span style={{ color:"#2E7D32" }}>→</span>{f}</button>)}
+          </div>}
+
+          {m.topicQuestions?.length>0&&<div style={{ marginLeft:27,marginTop:5,display:"flex",flexDirection:"column",gap:3 }}>
+            <div style={{ display:"flex",alignItems:"center",gap:4 }}><span style={{ fontSize:12 }}>{m.topicIcon}</span><span style={{ fontSize:10.5,fontWeight:700,color:"#0A1F44" }}>{m.topicName}</span><span style={{ fontSize:8.5,color:"#94A3B8" }}>{m.topicQuestions.length}q</span></div>
+            <div style={{ display:"flex",flexDirection:"column",gap:3,maxHeight:240,overflowY:"auto" }}>
+              {m.topicQuestions.map((tq,ti)=><button key={ti} onClick={()=>send(tq)} style={{ background:"#fff",border:"1px solid #E2E8F0",borderRadius:7,padding:"6px 9px",cursor:"pointer",textAlign:"left",fontSize:11,color:"#334155",fontWeight:500,display:"flex",alignItems:"center",gap:5,fontFamily:F,animation:`fu .2s ease-out ${ti*.02}s both` }}>
+                <span style={{ width:17,height:17,borderRadius:4,background:"#F1F5F9",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#64748B",fontWeight:600,flexShrink:0 }}>{ti+1}</span><span style={{ lineHeight:1.3 }}>{tq}</span>
+              </button>)}
+            </div>
+          </div>}
+
+          <div style={{ fontSize:8,color:"#CBD5E1",marginTop:2,marginLeft:m.role==="ai"?27:0 }}>{new Date(m.ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</div>
+        </div>)}
+        {typing&&<TypingDots/>}
+        {loadTxt&&<Loader text={loadTxt}/>}
+        <div ref={ref}/>
+      </div>
+
+      {sugs.length>0&&inp.length>=2&&<div style={{ background:"#fff",borderTop:"1px solid #E2E8F0",maxHeight:110,overflowY:"auto" }}>
+        {sugs.map((s,i)=><button key={i} onClick={()=>{setInp("");send(s);}} style={{ width:"100%",background:"none",border:"none",borderBottom:"1px solid #F1F5F9",padding:"7px 12px",cursor:"pointer",textAlign:"left",fontSize:11.5,color:"#334155",fontFamily:F,display:"flex",alignItems:"center",gap:5 }}><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="4.5" cy="4.5" r="3" stroke="#94A3B8" strokeWidth="1"/><path d="M7 7l2.5 2.5" stroke="#94A3B8" strokeWidth="1" strokeLinecap="round"/></svg>{s}</button>)}
+      </div>}
+
+      <div style={{ flexShrink:0,background:"#fff",borderTop:"1px solid #E2E8F0",padding:"6px 10px 24px" }}>
+        <div style={{ display:"flex",alignItems:"center",gap:6,background:inpOff?"#F8FAFB":"#F1F5F9",borderRadius:11,padding:"3px 5px 3px 12px" }}>
+          <input value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")send(inp);}} placeholder={ph} disabled={inpOff} style={{ flex:1,background:"none",border:"none",outline:"none",fontSize:12.5,color:"#1E293B",fontFamily:F,padding:"8px 0",opacity:inpOff?.5:1 }}/>
+          <button onClick={()=>send(inp)} disabled={!inp.trim()||inpOff} style={{ width:32,height:32,borderRadius:8,background:inp.trim()&&!inpOff?"linear-gradient(135deg,#0A1F44,#1A3C6E)":"#CBD5E1",border:"none",cursor:inp.trim()&&!inpOff?"pointer":"default",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 11l9-4.5L2 2v3.5l5 1-5 1V11z" fill="#fff"/></svg>
+          </button>
+        </div>
+        <div style={{ fontSize:8,color:"#CBD5E1",textAlign:"center",marginTop:4 }}>AI-powered. Verify before financial decisions.</div>
+      </div>
+    </div>
+  );
+}
+
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+  </script>
+</body>
+</html>
