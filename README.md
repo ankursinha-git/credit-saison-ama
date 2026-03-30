@@ -11,45 +11,6 @@ Interactive prototype for Credit Saison India's AI-powered AMA assistant with 3 
 - **Session Memory**: AI remembers your score and financial data for personalized follow-ups
 - **Intent Detection**: Natural language routing to the right agent
 
-## Quick Deploy to GitHub Pages
-
-### Option 1: Fastest (Manual Upload)
-
-1. Create a new GitHub repo (e.g., `credit-saison-ama-prototype`)
-2. Upload `index.html` to the root of the repo
-3. Go to **Settings > Pages**
-4. Under "Source", select **Deploy from a branch**
-5. Choose `main` branch, `/ (root)` folder
-6. Click Save
-7. Your prototype will be live at `https://yourusername.github.io/credit-saison-ama-prototype/`
-
-### Option 2: Via Git CLI
-
-```bash
-git init credit-saison-ama-prototype
-cd credit-saison-ama-prototype
-cp /path/to/index.html .
-git add index.html
-git commit -m "Credit Saison AMA prototype"
-git branch -M main
-git remote add origin https://github.com/YOURUSERNAME/credit-saison-ama-prototype.git
-git push -u origin main
-```
-
-Then enable GitHub Pages in repo Settings.
-
-### Option 3: Netlify Drop (Zero Config)
-
-1. Go to [https://app.netlify.com/drop](https://app.netlify.com/drop)
-2. Drag and drop the `index.html` file
-3. Get a live URL instantly
-
-### Option 4: Vercel
-
-1. Install Vercel CLI: `npm i -g vercel`
-2. In the folder with `index.html`, run: `vercel`
-3. Follow prompts. Done.
-
 ## How to Test
 
 1. Open the deployed URL on a mobile browser for the best experience
