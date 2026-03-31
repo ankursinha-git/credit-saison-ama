@@ -1,22 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Credit Saison AMA - Interactive Prototype</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body, #root { height: 100%; width: 100%; overflow: hidden; background: #E2E8F0; display: flex; align-items: center; justify-content: center; }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Credit Saison AMA Prototype</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #root { height: 100%; width: 100%; overflow: hidden; background: #E2E8F0; display: flex; align-items: center; justify-content: center; }
+  #err { display:none; position:fixed; top:0; left:0; right:0; background:#FEE2E2; color:#991B1B; padding:16px; font:12px/1.5 monospace; z-index:9999; max-height:40vh; overflow:auto; border-bottom:2px solid #F87171; }
+</style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useRef, useCallback } = React;
+<div id="err"></div>
+<div id="root">
+  <div style="text-align:center;padding:40px;font-family:system-ui,sans-serif;color:#64748B">
+    <div style="font-size:20px;margin-bottom:8px">Loading prototype...</div>
+    <div style="font-size:13px">This may take a few seconds on first load.</div>
+  </div>
+</div>
 
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+
+<script id="jsx-source" type="text/plain">
+const { useState, useEffect, useRef, useCallback } = React;
 
 // ─── QUESTION BANK (110 questions) ───
 const QB = {
@@ -122,8 +130,11 @@ function getResponse(text, memory) {
         const pctOfIncome = Math.round((monthlyAmt / p.income) * 100);
         const pctOfSpend = matchedCat.pct;
         const isHigh = pctOfSpend > 25;
+        var highMsg = isHigh
+          ? (matchedCat.name === "EMIs & Loans" ? "This is a significant portion of your budget. If you're considering a new loan, factor this in -- your current EMI burden is already at " + pctOfIncome + "% of income." : "This is a significant portion of your budget. You might want to review this category for potential savings.")
+          : (matchedCat.name === "Food & Dining" ? "This looks reasonable relative to your income. The average Indian urban household spends about 15-20% on food, so you're right in that range." : "This looks reasonable relative to your income.");
         return {
-          text: `Based on your bank data (${p.period}):\n\n💰 ${matchedCat.name}: ₹${(monthlyAmt/1000).toFixed(0)}K/month\n\nThis is ${pctOfSpend}% of your total spending and ${pctOfIncome}% of your monthly income (₹${(p.income/1000).toFixed(0)}K).\n\n${isHigh ? `This is a significant portion of your budget. ${matchedCat.name === "EMIs & Loans" ? "If you're considering a new loan, factor this in — your current EMI burden is already at " + pctOfIncome + "% of income." : "You might want to review this category for potential savings."}` : `This looks reasonable relative to your income. ${matchedCat.name === "Food & Dining" ? "The average Indian urban household spends about 15-20% on food, so you're right in that range." : ""}`}`,
+          text: "Based on your bank data (" + p.period + "):\n\n" + matchedCat.name + ": Rs." + (monthlyAmt/1000).toFixed(0) + "K/month\n\nThis is " + pctOfSpend + "% of your total spending and " + pctOfIncome + "% of your monthly income (Rs." + (p.income/1000).toFixed(0) + "K).\n\n" + highMsg,
           followUp: ["What is my total monthly spending?", "How much am I saving?", "Can I afford another EMI?"],
           cta: { text: "Open Finsights", action: "open_finsights" }
         };
@@ -138,16 +149,20 @@ function getResponse(text, memory) {
       }
 
       if (isSavingsQ) {
+        var breakdownLines = p.categories.map(function(c) { return "- " + c.name + ": Rs." + (c.amount/1000).toFixed(0) + "K (" + c.pct + "%)"; }).join("\n");
+        var savingsAdvice = p.savingsRate >= 25 ? "Your savings rate is excellent. You have a strong financial cushion." : p.savingsRate >= 18 ? "Your savings rate is above average. Consider automating investments to build wealth faster." : "Your savings rate is below the 18% national average. Look at your top 2 spending categories for optimization opportunities.";
         return {
-          text: `From your bank data (${p.period}):\n\n💰 You're saving ₹${(p.savings/1000).toFixed(0)}K per month (${p.savingsRate}% of income).\n\nBreakdown of where your ₹${(p.spending/1000).toFixed(0)}K monthly spending goes:\n${p.categories.map(c => `• ${c.name}: ₹${(c.amount/1000).toFixed(0)}K (${c.pct}%)`).join("\n")}\n\n${p.savingsRate >= 25 ? "Your savings rate is excellent. You have a strong financial cushion." : p.savingsRate >= 18 ? "Your savings rate is above average. Consider automating investments to build wealth faster." : "Your savings rate is below the 18% national average. Look at your top 2 spending categories for optimization opportunities."}`,
+          text: "From your bank data (" + p.period + "):\n\nYou're saving Rs." + (p.savings/1000).toFixed(0) + "K per month (" + p.savingsRate + "% of income).\n\nBreakdown of where your Rs." + (p.spending/1000).toFixed(0) + "K monthly spending goes:\n" + breakdownLines + "\n\n" + savingsAdvice,
           followUp: ["How much do I spend on food?", "What is my EMI burden?", "Can I afford another loan?"],
           cta: { text: "Open Finsights", action: "open_finsights" }
         };
       }
 
       if (isSummaryQ || (isSpendingQ && !matchedCat)) {
+        var summaryLines = p.categories.map(function(c) { return "- " + c.name + ": Rs." + (c.amount/1000).toFixed(0) + "K (" + c.pct + "%)"; }).join("\n");
+        var biggestNote = p.categories[0].pct > 30 ? "This is a significant portion -- worth reviewing if you're looking to optimize." : "This is within a reasonable range.";
         return {
-          text: `Here's your financial summary (${p.period}):\n\n📊 Income: ₹${(p.income/1000).toFixed(0)}K/month\n📊 Spending: ₹${(p.spending/1000).toFixed(0)}K/month\n📊 Savings: ₹${(p.savings/1000).toFixed(0)}K/month (${p.savingsRate}%)\n\nSpending breakdown:\n${p.categories.map(c => `• ${c.name}: ₹${(c.amount/1000).toFixed(0)}K (${c.pct}%)`).join("\n")}\n\nYour biggest expense is ${p.categories[0].name} at ₹${(p.categories[0].amount/1000).toFixed(0)}K/month. ${p.categories[0].pct > 30 ? "This is a significant portion — worth reviewing if you're looking to optimize." : "This is within a reasonable range."}`,
+          text: "Here's your financial summary (" + p.period + "):\n\nIncome: Rs." + (p.income/1000).toFixed(0) + "K/month\nSpending: Rs." + (p.spending/1000).toFixed(0) + "K/month\nSavings: Rs." + (p.savings/1000).toFixed(0) + "K/month (" + p.savingsRate + "%)\n\nSpending breakdown:\n" + summaryLines + "\n\nYour biggest expense is " + p.categories[0].name + " at Rs." + (p.categories[0].amount/1000).toFixed(0) + "K/month. " + biggestNote,
           followUp: ["How much did I spend on food?", "What is my EMI burden?", "Can I afford another EMI?"],
           cta: { text: "Open Finsights", action: "open_finsights" }
         };
@@ -161,8 +176,11 @@ function getResponse(text, memory) {
       const maxEmi = Math.round(p.income * 0.4);
       const headroom = maxEmi - currentEmi;
       const canAfford = headroom > 5000;
+      var affordMsg = canAfford
+        ? "Yes, you can comfortably take on an additional EMI of up to Rs." + (headroom/1000).toFixed(0) + "K/month.\n\nAt 16% interest over 36 months, that translates to roughly Rs." + Math.round(headroom*28/1000) + "K loan amount.\nAt 10% (LAP rate) over 10 years, that's roughly Rs." + Math.round(headroom*78/1000) + "K."
+        : "Your current EMI burden is close to the safe limit. I'd recommend reducing existing obligations before taking a new loan, or consider a longer tenure to keep EMIs low.";
       return {
-        text: `Based on your financial data:\n\n📊 Current EMIs: ₹${(currentEmi/1000).toFixed(0)}K/month (${Math.round(currentEmi/p.income*100)}% of income)\n📊 Safe limit (40% rule): ₹${(maxEmi/1000).toFixed(0)}K/month\n📊 Available headroom: ₹${(headroom/1000).toFixed(0)}K/month\n\n${canAfford ? `Yes, you can comfortably take on an additional EMI of up to ₹${(headroom/1000).toFixed(0)}K/month.\n\nAt 16% interest over 36 months, that translates to roughly ₹${Math.round(headroom*28/1000)}K loan amount.\nAt 10% (LAP rate) over 10 years, that's roughly ₹${Math.round(headroom*78/1000)}K.` : "Your current EMI burden is close to the safe limit. I'd recommend reducing existing obligations before taking a new loan, or consider a longer tenure to keep EMIs low."}`,
+        text: "Based on your financial data:\n\nCurrent EMIs: Rs." + (currentEmi/1000).toFixed(0) + "K/month (" + Math.round(currentEmi/p.income*100) + "% of income)\nSafe limit (40% rule): Rs." + (maxEmi/1000).toFixed(0) + "K/month\nAvailable headroom: Rs." + (headroom/1000).toFixed(0) + "K/month\n\n" + affordMsg,
         followUp: ["What types of business loans does Credit Saison offer?", "What is the interest rate for LAP?"],
         cta: canAfford ? { text: "Explore Loan Options", action: "apply" } : null
       };
@@ -171,8 +189,11 @@ function getResponse(text, memory) {
     // "How can I save more" query
     if (lower.match(/save\s*more|reduce\s*spend|cut\s*(cost|expens|spend)|optimi[sz]e/)) {
       const sorted = [...p.categories].sort((a, b) => b.amount - a.amount);
+      var tip1 = sorted[0].name === "EMIs & Loans" ? "Consider refinancing at lower rates or making prepayments to reduce interest." : sorted[0].name === "Rent & Utilities" ? "Utility bills can be optimized. Rent is harder to change short-term." : "Look for 10-15% reduction opportunities here for maximum impact.";
+      var tip2 = sorted[1].name === "Food & Dining" ? "Cooking more at home and reducing food delivery could save Rs.5-8K/month." : "Review for subscriptions or recurring charges you might not need.";
+      var tip3 = sorted[2].name === "Shopping" ? "Try a 24-hour rule before non-essential purchases." : "Small optimizations here add up.";
       return {
-        text: `Here are actionable ways to save more based on your spending data:\n\n1. ${sorted[0].name} (₹${(sorted[0].amount/1000).toFixed(0)}K) — Your biggest expense. ${sorted[0].name === "EMIs & Loans" ? "Consider refinancing at lower rates or making prepayments to reduce interest." : sorted[0].name === "Rent & Utilities" ? "Utility bills can be optimized with energy-saving measures. Rent is harder to change short-term." : "Look for 10-15% reduction opportunities here for maximum impact."}\n\n2. ${sorted[1].name} (₹${(sorted[1].amount/1000).toFixed(0)}K) — ${sorted[1].name === "Food & Dining" ? "Cooking more at home and reducing food delivery could save ₹5-8K/month." : "Review for subscriptions or recurring charges you might not need."}\n\n3. ${sorted[2].name} (₹${(sorted[2].amount/1000).toFixed(0)}K) — ${sorted[2].name === "Shopping" ? "Try a 24-hour rule before non-essential purchases." : "Small optimizations here add up."}\n\nA realistic target: Save an additional ₹8-12K/month by optimizing your top 2 categories. That's ₹1-1.4L/year.`,
+        text: "Here are actionable ways to save more based on your spending data:\n\n1. " + sorted[0].name + " (Rs." + (sorted[0].amount/1000).toFixed(0) + "K) -- Your biggest expense. " + tip1 + "\n\n2. " + sorted[1].name + " (Rs." + (sorted[1].amount/1000).toFixed(0) + "K) -- " + tip2 + "\n\n3. " + sorted[2].name + " (Rs." + (sorted[2].amount/1000).toFixed(0) + "K) -- " + tip3 + "\n\nA realistic target: Save an additional Rs.8-12K/month by optimizing your top 2 categories.",
         followUp: ["What is my total monthly spending?", "Can I afford a new EMI?"],
         cta: { text: "Open Finsights", action: "open_finsights" }
       };
@@ -218,7 +239,6 @@ function getResponse(text, memory) {
   }
 
   // ═══ FIX #2: FUZZY MATCHING — find closest question ═══
-  const lower = text.toLowerCase();
   const keywords = lower.split(/\s+/).filter(w => w.length > 2);
   let bestMatch = null, bestScore = 0;
   
@@ -783,7 +803,35 @@ function App() {
   );
 }
 
-    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
-  </script>
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+
+<script>
+// Compile and execute JSX at runtime
+window.onerror = function(msg, url, line, col, err) {
+  var el = document.getElementById('err');
+  el.style.display = 'block';
+  el.innerHTML += '<b>Runtime Error:</b> ' + msg + ' (line ' + line + ')' + '<br>';
+};
+
+try {
+  var jsxCode = document.getElementById('jsx-source').textContent;
+  var output = Babel.transform(jsxCode, { 
+    presets: ['react'],
+    filename: 'app.jsx'
+  });
+  var fn = new Function(output.code);
+  fn();
+} catch(e) {
+  var el = document.getElementById('err');
+  el.style.display = 'block';
+  el.innerHTML = '<b>Babel Compile Error:</b><br>' + e.message + '<br><br>';
+  if (e.loc) {
+    el.innerHTML += '<b>At line:</b> ' + e.loc.line + ', col: ' + e.loc.column + '<br>';
+  }
+  console.error('Full error:', e);
+}
+</script>
 </body>
 </html>
